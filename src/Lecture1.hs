@@ -112,8 +112,7 @@ and finds a sum of the numbers inside this string.
 The string contains only spaces and/or numbers.
 -}
 strSum :: String -> Int
-strSum str = sum xs
-  where xs = map (\x -> read x :: Int) (words str)
+strSum = sum . map read . words
 
 {- | Write a function that takes a number and a list of numbers and
 returns a string, saying how many elements of the list are strictly
