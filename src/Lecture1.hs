@@ -101,7 +101,7 @@ first character) and negative end position should result in an empty
 string.
 -}
 subString :: Int -> Int -> String -> String
-subString start end str = (drop start . take (end + 1)) str
+subString start end = drop start . take (end + 1)
 
 {- | Write a function that takes a String — space separated numbers,
 and finds a sum of the numbers inside this string.
