@@ -129,8 +129,10 @@ and lower than 6 elements (4, 5, 6, 7, 8 and 9).
 🕯 HINT: Use recursion to implement this function.
 -}
 lowerAndGreater :: Int -> [Int] -> String
-lowerAndGreater n list = (show n) ++ " is greater than " ++ ((show . getLower 0) list) ++ " elements and lower than " ++ ((show . getGreater 0) list) ++ " elements"
-  where getLower counter [] = counter
+lowerAndGreater n list = show n ++ " is greater than " ++ (show . getLower 0) list ++ " elements and lower than " ++ (show . getGreater 0) list ++ " elements"
+  where getLower :: Int -> [Int] -> Int
+        getLower counter [] = counter
         getLower counter (x:xs) = if x < n then getLower (counter + 1) xs else getLower counter xs
+        getGreater :: Int -> [Int] -> Int
         getGreater counter [] = counter
         getGreater counter (x:xs) = if x > n then getGreater (counter + 1) xs else getGreater counter xs
