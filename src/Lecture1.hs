@@ -131,7 +131,11 @@ lowerAndGreater :: Int -> [Int] -> String
 lowerAndGreater n list = show n ++ " is greater than " ++ (show . getLower 0) list ++ " elements and lower than " ++ (show . getGreater 0) list ++ " elements"
   where getLower :: Int -> [Int] -> Int
         getLower counter [] = counter
-        getLower counter (x:xs) = if x < n then getLower (counter + 1) xs else getLower counter xs
+        getLower counter (x:xs)
+          | x < n = getLower (counter + 1) xs
+          | otherwise = getLower counter xs
         getGreater :: Int -> [Int] -> Int
         getGreater counter [] = counter
-        getGreater counter (x:xs) = if x > n then getGreater (counter + 1) xs else getGreater counter xs
+        getGreater counter (x:xs)
+          | x > n = getGreater (counter + 1) xs
+          | otherwise = getGreater counter xs
