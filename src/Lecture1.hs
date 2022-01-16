@@ -66,7 +66,7 @@ sumOfSquares x y = x * x + y * y
 -}
 -- DON'T FORGET TO SPECIFY THE TYPE IN HERE
 lastDigit :: Int -> Int
-lastDigit n = (abs n) `mod` 10
+lastDigit n = abs n `mod` 10
 
 {- | Write a function that takes three numbers and returns the
 difference between the biggest number and the smallest one.
@@ -81,9 +81,9 @@ Try to use local variables (either let-in or where) to implement this
 function.
 -}
 minmax :: Int -> Int -> Int -> Int
-minmax x y z = maxN - minN
-  where maxN = x `max` y `max` z
-        minN = x `min` y `min` z
+minmax x y z = biggest - smallest
+  where biggest = x `max` y `max` z
+        smallest = x `min` y `min` z
 
 {- | Implement a function that takes a string, start and end positions
 and returns a substring of a given string from the start position to
