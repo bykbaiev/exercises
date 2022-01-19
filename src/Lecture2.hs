@@ -52,7 +52,11 @@ zero, you can stop calculating product and return 0 immediately.
 84
 -}
 lazyProduct :: [Int] -> Int
-lazyProduct = error "TODO"
+lazyProduct = go 1
+  where go :: Int -> [Int] -> Int
+        go res [] = res
+        go _ (0:_) = 0
+        go res (x:xs) = go (res * x) xs
 
 {- | Implement a function that duplicates every element in the list.
 
@@ -62,7 +66,10 @@ lazyProduct = error "TODO"
 "ccaabb"
 -}
 duplicate :: [a] -> [a]
-duplicate = error "TODO"
+duplicate = go []
+  where go :: [a] -> [a] -> [a]
+        go xs [] = xs
+        go xs (y:ys) = go (xs ++ [y, y]) ys
 
 {- | Implement function that takes index and a list and removes the
 element at the given position. Additionally, this function should also
@@ -74,7 +81,13 @@ return the removed element.
 >>> removeAt 10 [1 .. 5]
 (Nothing,[1,2,3,4,5])
 -}
-removeAt = error "TODO"
+removeAt :: Int -> [a] -> (Maybe a, [a])
+removeAt n = go 0 []
+  where go :: Int -> [a] -> [a] -> (Maybe a, [a])
+        go _ filtered [] = (Nothing, filtered)
+        go index filtered (x:xs)
+          | index == n = (Just x, filtered ++ xs)
+          | otherwise = go (index + 1) (filtered ++ [x]) xs
 
 {- | Write a function that takes a list of lists and returns only
 lists of even lengths.
@@ -85,7 +98,8 @@ lists of even lengths.
 ♫ NOTE: Use eta-reduction and function composition (the dot (.) operator)
   in this function.
 -}
-evenLists = error "TODO"
+evenLists :: [[a]] -> [[a]]
+evenLists = filter (even . length)
 
 {- | The @dropSpaces@ function takes a string containing a single word
 or number surrounded by spaces and removes all leading and trailing
@@ -101,7 +115,8 @@ spaces.
 
 🕯 HINT: look into Data.Char and Prelude modules for functions you may use.
 -}
-dropSpaces = error "TODO"
+dropSpaces :: String -> String
+dropSpaces = filter (/= ' ')
 
 {- |
 
@@ -185,7 +200,14 @@ False
 True
 -}
 isIncreasing :: [Int] -> Bool
-isIncreasing = error "TODO"
+isIncreasing = go Nothing [] 
+  where go :: Maybe Int -> [Int] -> [Int] -> Bool 
+        go _ _ [] = True
+        go Nothing xs (y:ys) = go (Just y) xs ys
+        go (Just x) xs (y:ys)
+          | x > y = False
+          | otherwise = go (Just y) (xs ++ [x]) ys
+
 
 {- | Implement a function that takes two lists, sorted in the
 increasing order, and merges them into new list, also sorted in the
@@ -198,7 +220,13 @@ verify that.
 [1,2,3,4,7]
 -}
 merge :: [Int] -> [Int] -> [Int]
-merge = error "TODO"
+merge = go []
+  where go :: [Int] -> [Int] -> [Int] -> [Int]
+        go res xs [] = res ++ xs
+        go res [] ys = res ++ ys
+        go res (x:xs) (y:ys)
+          | x < y = go (res ++ [x]) xs (y:ys)
+          | otherwise = go (res ++ [y]) (x:xs) ys
 
 {- | Implement the "Merge Sort" algorithm in Haskell. The @mergeSort@
 function takes a list of numbers and returns a new list containing the
@@ -215,7 +243,11 @@ The algorithm of merge sort is the following:
 [1,2,3]
 -}
 mergeSort :: [Int] -> [Int]
-mergeSort = error "TODO"
+mergeSort [] = []
+mergeSort [x] = [x]
+mergeSort list = (go . splitAt ((length list + 1) `div` 2)) list
+  where go :: ([Int], [Int]) -> [Int]
+        go (xs, ys) = merge (mergeSort xs) (mergeSort ys)
 
 
 {- | Haskell is famous for being a superb language for implementing
