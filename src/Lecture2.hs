@@ -39,6 +39,7 @@ module Lecture2
     , eval
     , constantFolding
     ) where
+import Data.Maybe
 
 -- VVV If you need to import libraries, do it after this line ... VVV
 
@@ -296,11 +297,37 @@ data EvalError
     = VariableNotFound String
     deriving (Show, Eq)
 
+maybeHead :: [a] -> Maybe a
+maybeHead [] = Nothing
+maybeHead (x:_) = Just x
+
+calculateAllLiterals :: Expr -> (Int, [String])
+calculateAllLiterals = go (0, [])
+  where go :: (Int, [String]) -> Expr -> (Int, [String])
+        go (value, variables) (Lit x) = (value + x, variables)
+        go (value, variables) (Var x) = (value, variables ++ [x])
+        go (value, variables) (Add augend addend) = (value + firstValue + secondValue
+                                                    , variables ++ firstVariables ++ secondVariables)
+          where (firstValue, firstVariables) = go (0, []) augend
+                (secondValue, secondVariables) = go (0, []) addend
+
+mapJust :: (a -> b) -> Maybe a -> Maybe b
+mapJust _ Nothing = Nothing
+mapJust f (Just x) = Just $ f x
+
 {- | Having all this set up, we can finally implement an evaluation function.
 It returns either a successful evaluation result or an error.
 -}
 eval :: Variables -> Expr -> Either EvalError Int
-eval = error "TODO"
+eval variables expression = getSumOfVars value vars
+  where (value, vars) = calculateAllLiterals expression
+        getSumOfVars :: Int -> [String] -> Either EvalError Int
+        getSumOfVars res [] = Right res
+        getSumOfVars res (var:vs) = if isNothing varValue
+                                    then Left $ VariableNotFound var
+                                    else getSumOfVars (res + fromMaybe 0 varValue) vs
+          where varValue :: Maybe Int
+                varValue = mapJust snd $ maybeHead $ filter (\(n, _) -> n == var) variables
 
 {- | Compilers also perform optimizations! One of the most common
 optimizations is "Constant Folding". It performs arithmetic operations
