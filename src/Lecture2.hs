@@ -351,4 +351,13 @@ Write a function that takes and expression and performs "Constant
 Folding" optimization on the given expression.
 -}
 constantFolding :: Expr -> Expr
-constantFolding = error "TODO"
+constantFolding expr = if null variables
+                       then Lit res
+                       else removeZero $ Add (Lit res) (varsToExpr variables)
+  where (res, variables) = calculateAllLiterals expr
+        varsToExpr :: [String] -> Expr
+        varsToExpr = foldr1 Add . map Var
+        removeZero :: Expr -> Expr
+        removeZero (Add (Lit 0) expr) = expr
+        removeZero (Add expr (Lit 0)) = expr
+        removeZero expr = expr
