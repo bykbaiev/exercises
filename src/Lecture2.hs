@@ -226,7 +226,8 @@ merge = go []
         go res xs [] = res ++ xs
         go res [] ys = res ++ ys
         go res (x:xs) (y:ys)
-          | x < y = go (res ++ [x]) xs (y:ys)
+          | x == y    = go (res ++ [x, y]) xs ys
+          | x < y     = go (res ++ [x]) xs (y:ys)
           | otherwise = go (res ++ [y]) (x:xs) ys
 
 {- | Implement the "Merge Sort" algorithm in Haskell. The @mergeSort@
