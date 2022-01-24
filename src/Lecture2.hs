@@ -460,10 +460,6 @@ calculateAllLiterals = go (0, [])
           where (firstValue, firstVariables) = go (0, []) augend
                 (secondValue, secondVariables) = go (0, []) addend
 
-mapJust :: (a -> b) -> Maybe a -> Maybe b
-mapJust _ Nothing = Nothing
-mapJust f (Just x) = Just $ f x
-
 {- | Having all this set up, we can finally implement an evaluation function.
 It returns either a successful evaluation result or an error.
 -}
@@ -476,7 +472,7 @@ eval variables expression = getSumOfVars value vars
                                     then Left $ VariableNotFound var
                                     else getSumOfVars (res + fromMaybe 0 varValue) vs
           where varValue :: Maybe Int
-                varValue = mapJust snd $ maybeHead $ filter (\(n, _) -> n == var) variables
+                varValue = fmap snd $ maybeHead $ filter (\(n, _) -> n == var) variables
 
 {- | Compilers also perform optimizations! One of the most common
 optimizations is "Constant Folding". It performs arithmetic operations
