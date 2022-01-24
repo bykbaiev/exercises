@@ -174,13 +174,161 @@ You're free to define any helper functions.
 -}
 
 -- some help in the beginning ;)
+
+newtype Health = Health Int
+
+mkHealth :: Int -> Maybe Health
+mkHealth value
+  | value < 0 = Nothing
+  | otherwise = Just $ Health value
+
+unHealth :: Health -> Int
+unHealth (Health health) = health
+
+newtype AttackPower = AttackPower Int
+
+mkAttackPower :: Int -> Maybe AttackPower
+mkAttackPower value
+  | value < 0 = Nothing
+  | otherwise = Just $ AttackPower value
+
+unAttackPower :: AttackPower -> Int
+unAttackPower (AttackPower power) = power
+
+newtype Endurance = Endurance Int
+
+mkEndurance :: Int -> Maybe Endurance
+mkEndurance value
+  | value < 0 = Nothing
+  | otherwise = Just $ Endurance value
+
+unEndurance :: Endurance -> Int
+unEndurance (Endurance endurance) = endurance
+
+data Treasure = Treasure
+
+newtype Gold = Gold Int
+
+mkGold :: Int -> Maybe Gold
+mkGold value
+  | value < 0 = Nothing
+  | otherwise = Just $ Gold value
+
+unGold :: Gold -> Int
+unGold (Gold gold) = gold
+
+newtype Experience = Experience Int
+
+mkExperience :: Int -> Maybe Experience
+mkExperience value
+  | value < 0 = Nothing
+  | otherwise = Just $ Experience value
+
+unExperience :: Experience -> Int
+unExperience (Experience experience) = experience
+
 data Knight = Knight
-    { knightHealth    :: Int
-    , knightAttack    :: Int
-    , knightEndurance :: Int
+    { knightHealth    :: Health
+    , knightAttack    :: AttackPower
+    , knightEndurance :: Endurance
     }
 
-dragonFight = error "TODO"
+data KnightStats = KnightStats { ksH :: Int
+                               , ksP :: Int
+                               , ksE :: Int }
+
+mkKnight :: KnightStats -> Maybe Knight
+mkKnight stats = case (mkHealth $ ksH stats, mkAttackPower $ ksP stats, mkEndurance $ ksE stats) of
+  (Just h, Just p, Just e) -> Just $ Knight { knightHealth    = h
+                                            , knightAttack    = p
+                                            , knightEndurance = e }
+  _                        -> Nothing
+
+data DragonInfo = DragonInfo
+  { dragonHealth    :: Health
+  , dragonFirePower :: AttackPower
+  , dragonGold      :: Gold}
+
+data DragonInfoStats = DragonInfoStats { disH :: Int
+                                       , disP :: Int
+                                       , disG :: Int }
+
+mkDragonInfo :: DragonInfoStats -> Maybe DragonInfo
+mkDragonInfo stats = case (mkHealth $ disH stats, mkAttackPower $ disP stats, mkGold $ disG stats) of
+  (Just h, Just p, Just g) -> Just $ DragonInfo { dragonHealth     = h
+                                                , dragonFirePower = p
+                                                , dragonGold      = g}
+  _                        -> Nothing
+
+unDragonInfo :: Dragon -> DragonInfo
+unDragonInfo (Red _ info)   = info
+unDragonInfo (Black _ info) = info
+unDragonInfo (Green info)   = info
+
+data Dragon
+  = Red (Maybe Treasure) DragonInfo
+  | Black (Maybe Treasure) DragonInfo
+  | Green DragonInfo
+
+dragonExperience :: Dragon -> Experience
+dragonExperience (Red _ _)   = fromMaybe (Experience 0) $ mkExperience 100
+dragonExperience (Black _ _) = fromMaybe (Experience 0) $ mkExperience 150
+dragonExperience (Green _)   = fromMaybe (Experience 0) $ mkExperience 250
+
+dragonTreasure :: Dragon -> Maybe Treasure
+dragonTreasure (Red treasure _) = treasure
+dragonTreasure (Black treasure _) = treasure
+dragonTreasure (Green _) = Nothing
+
+data TreasuresChest = ChestWithTreasure (Maybe Treasure) | EmptyChest
+
+data WinPerks = WinPerks TreasuresChest Gold Experience
+
+mkWinPerks :: Dragon -> WinPerks
+mkWinPerks (Green info) = WinPerks EmptyChest (dragonGold info) (dragonExperience (Green info))
+mkWinPerks dragon       = WinPerks (ChestWithTreasure $ dragonTreasure dragon)
+                                   (dragonGold $ unDragonInfo dragon)
+                                   (dragonExperience dragon)
+
+data FightResults = Win WinPerks | Loss
+
+isDragonDead :: Dragon -> Bool
+isDragonDead = (== 0) . unHealth . dragonHealth . unDragonInfo
+
+isKnightDead :: Knight -> Bool
+isKnightDead = (== 0) . unHealth . knightHealth
+
+isKnightWeak :: Knight -> Bool
+isKnightWeak = (== 0) . unEndurance . knightEndurance
+
+hitKnight :: AttackPower -> Knight -> Knight
+hitKnight power knight = knight { knightHealth = Health (max health 0) }
+  where health = (unHealth $ knightHealth knight) - (unAttackPower power)
+
+weakenKnight :: Knight -> Knight
+weakenKnight knight = knight { knightEndurance = Endurance endurance }
+  where endurance = (unEndurance $ knightEndurance knight) - 1
+
+hitDragon :: AttackPower -> Dragon -> Dragon
+hitDragon power dragon = case dragon of
+                          Red treasure info   -> Red treasure updatedInfo
+                          Black treasure info -> Black treasure updatedInfo
+                          Green info          -> Green updatedInfo
+  where info        = unDragonInfo dragon
+        health      = (unHealth $ dragonHealth info) - 1
+        updatedInfo = info { dragonHealth = Health (max 0 health) }
+
+dragonFight :: Knight -> Dragon -> FightResults
+dragonFight = go 0
+  where go :: Int -> Knight -> Dragon -> FightResults
+        go counter knight dragon 
+          | isDragonDead dragon = Win $ mkWinPerks dragon
+          | isKnightDead knight = Loss
+          | isKnightWeak knight = Loss
+          | counter == 10       = go 0
+                                     (weakenKnight $ hitKnight (dragonFirePower $ unDragonInfo dragon) knight)
+                                     (hitDragon (knightAttack knight) dragon)
+          | otherwise = go (counter + 1) (weakenKnight knight) (hitDragon (knightAttack knight) dragon)
 
 ----------------------------------------------------------------------------
 -- Extra Challenges
