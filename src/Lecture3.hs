@@ -179,14 +179,14 @@ monsters, you should get a combined treasure and not just the first
 🕯 HINT: You may need to add additional constraints to this instance
   declaration.
 -}
-instance Num a => Semigroup (Treasure a) where
+instance (Semigroup a) => Semigroup (Treasure a) where
   (<>) :: Treasure a -> Treasure a -> Treasure a
   (<>) NoTreasure NoTreasure             = NoTreasure
   (<>) NoTreasure (SomeTreasure y)       = SomeTreasure y
   (<>) (SomeTreasure x) NoTreasure       = SomeTreasure x
-  (<>) (SomeTreasure x) (SomeTreasure y) = SomeTreasure (x + y)
+  (<>) (SomeTreasure x) (SomeTreasure y) = SomeTreasure (x <> y)
 
-instance Num a => Monoid (Treasure a) where
+instance (Semigroup a) => Monoid (Treasure a) where
   mempty :: Treasure a
   mempty = NoTreasure
 
@@ -244,8 +244,24 @@ types that can have such an instance.
 -- instance Foldable Weekday where
 -- instance Foldable Gold where
 -- instance Foldable Reward where
--- instance Foldable List1 where
--- instance Foldable Treasure where
+
+instance Foldable List1 where
+  foldr :: (a -> b -> b) -> b -> List1 a -> b
+  foldr reducer acc (List1 x [])     = reducer x acc
+  foldr reducer acc (List1 x (y:ys)) = reducer x (foldr reducer acc (List1 y ys))
+
+  foldMap :: Monoid m => (a -> m) -> List1 a -> m
+  foldMap fn (List1 x [])     = fn x
+  foldMap fn (List1 x (y:ys)) = fn x <> foldMap fn (List1 y ys)
+
+instance Foldable Treasure where
+  foldr :: (a -> b -> b) -> b -> Treasure a -> b
+  foldr _ acc NoTreasure             = acc
+  foldr reducer acc (SomeTreasure x) = reducer x acc
+
+  foldMap :: Monoid m => (a -> m) -> Treasure a -> m
+  foldMap _ NoTreasure        = mempty
+  foldMap fn (SomeTreasure x) = fn x
 
 {-
 
@@ -260,8 +276,16 @@ types that can have such an instance.
 -- instance Functor Weekday where
 -- instance Functor Gold where
 -- instance Functor Reward where
--- instance Functor List1 where
--- instance Functor Treasure where
+
+instance Functor List1 where
+  fmap :: (a -> b) -> List1 a -> List1 b
+  fmap fn (List1 x []) = List1 (fn x) []
+  fmap fn (List1 x xs) = List1 (fn x) (map fn xs)
+
+instance Functor Treasure where
+  fmap :: (a -> b) -> Treasure a -> Treasure b
+  fmap _ NoTreasure        = NoTreasure
+  fmap fn (SomeTreasure x) = SomeTreasure $ fn x
 
 {- | Functions are first-class values in Haskell. This means that they
 can be even stored inside other data types as well!
@@ -280,4 +304,5 @@ Just [8,9,10]
 [8,20,3]
 
 -}
-apply = error "TODO"
+apply :: (Functor f) => a -> f (a -> b) -> f b
+apply value = fmap (\f -> f value)
