@@ -80,7 +80,7 @@ return the removed element.
 (Nothing,[1,2,3,4,5])
 -}
 removeAt :: Int -> [a] -> (Maybe a, [a])
-removeAt n = go 0 []
+removeAt n = if n < 0 then (,) Nothing else go 0 []
   where go :: Int -> [a] -> [a] -> (Maybe a, [a])
         go _ filtered [] = (Nothing, filtered)
         go index filtered (x:xs)
@@ -114,7 +114,7 @@ spaces.
 🕯 HINT: look into Data.Char and Prelude modules for functions you may use.
 -}
 dropSpaces :: String -> String
-dropSpaces = filter (/= ' ')
+dropSpaces = takeWhile (/= ' ') . dropWhile (== ' ')
 
 {- |
 
@@ -366,14 +366,12 @@ verify that.
 [1,2,3,4,7]
 -}
 merge :: [Int] -> [Int] -> [Int]
-merge = go []
-  where go :: [Int] -> [Int] -> [Int] -> [Int]
-        go res xs [] = res ++ xs
-        go res [] ys = res ++ ys
-        go res (x:xs) (y:ys)
-          | x == y    = go (res ++ [x, y]) xs ys
-          | x < y     = go (res ++ [x]) xs (y:ys)
-          | otherwise = go (res ++ [y]) (x:xs) ys
+merge xs [] = xs
+merge [] ys = ys
+merge (x:xs) (y:ys)
+  | x == y    = [x, y] ++ merge xs ys
+  | x < y     = x : merge xs (y:ys)
+  | otherwise = y : merge (x:xs) ys
 
 {- | Implement the "Merge Sort" algorithm in Haskell. The @mergeSort@
 function takes a list of numbers and returns a new list containing the
