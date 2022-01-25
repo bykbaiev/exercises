@@ -67,10 +67,7 @@ lazyProduct = go 1
 "ccaabb"
 -}
 duplicate :: [a] -> [a]
-duplicate = go []
-  where go :: [a] -> [a] -> [a]
-        go xs [] = xs
-        go xs (y:ys) = go (xs ++ [y, y]) ys
+duplicate = concatMap (replicate 2)
 
 {- | Implement function that takes index and a list and removes the
 element at the given position. Additionally, this function should also
@@ -303,19 +300,19 @@ isKnightWeak = (== 0) . unEndurance . knightEndurance
 
 hitKnight :: AttackPower -> Knight -> Knight
 hitKnight power knight = knight { knightHealth = Health (max health 0) }
-  where health = (unHealth $ knightHealth knight) - (unAttackPower power)
+  where health = unHealth (knightHealth knight) - unAttackPower power
 
 weakenKnight :: Knight -> Knight
 weakenKnight knight = knight { knightEndurance = Endurance endurance }
-  where endurance = (unEndurance $ knightEndurance knight) - 1
+  where endurance = unEndurance (knightEndurance knight) - 1
 
 hitDragon :: AttackPower -> Dragon -> Dragon
 hitDragon power dragon = case dragon of
-                          Red treasure info   -> Red treasure updatedInfo
-                          Black treasure info -> Black treasure updatedInfo
-                          Green info          -> Green updatedInfo
+                          Red treasure _   -> Red treasure updatedInfo
+                          Black treasure _ -> Black treasure updatedInfo
+                          Green _          -> Green updatedInfo
   where info        = unDragonInfo dragon
-        health      = (unHealth $ dragonHealth info) - 1
+        health      = unHealth (dragonHealth info) - unAttackPower power
         updatedInfo = info { dragonHealth = Health (max 0 health) }
 
 dragonFight :: Knight -> Dragon -> FightResults
