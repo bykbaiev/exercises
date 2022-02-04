@@ -346,14 +346,11 @@ False
 True
 -}
 isIncreasing :: [Int] -> Bool
-isIncreasing = go Nothing [] 
-  where go :: Maybe Int -> [Int] -> [Int] -> Bool 
-        go _ _ [] = True
-        go Nothing xs (y:ys) = go (Just y) xs ys
-        go (Just x) xs (y:ys)
-          | x > y = False
-          | otherwise = go (Just y) (xs ++ [x]) ys
-
+isIncreasing [] = True
+isIncreasing [_] = True
+isIncreasing (x:y:xs)
+  | x > y     = False
+  | otherwise = isIncreasing $ y:xs
 
 {- | Implement a function that takes two lists, sorted in the
 increasing order, and merges them into new list, also sorted in the
@@ -369,7 +366,7 @@ merge :: [Int] -> [Int] -> [Int]
 merge xs [] = xs
 merge [] ys = ys
 merge (x:xs) (y:ys)
-  | x == y    = [x, y] ++ merge xs ys
+  | x == y    = x : y : merge xs ys
   | x < y     = x : merge xs (y:ys)
   | otherwise = y : merge (x:xs) ys
 
@@ -441,10 +438,6 @@ data EvalError
     = VariableNotFound String
     deriving (Show, Eq)
 
-maybeHead :: [a] -> Maybe a
-maybeHead [] = Nothing
-maybeHead (x:_) = Just x
-
 calculateAllLiterals :: Expr -> (Int, [String])
 calculateAllLiterals = go (0, [])
   where go :: (Int, [String]) -> Expr -> (Int, [String])
@@ -467,7 +460,7 @@ eval variables expression = getSumOfVars value vars
                                     then Left $ VariableNotFound var
                                     else getSumOfVars (res + fromMaybe 0 varValue) vs
           where varValue :: Maybe Int
-                varValue = fmap snd $ maybeHead $ filter (\(n, _) -> n == var) variables
+                varValue = fmap snd $ listToMaybe $ filter (\(n, _) -> n == var) variables
 
 {- | Compilers also perform optimizations! One of the most common
 optimizations is "Constant Folding". It performs arithmetic operations
