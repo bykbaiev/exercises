@@ -142,7 +142,7 @@ instance Semigroup Reward where
 
 instance Monoid Reward where
   mempty :: Reward
-  mempty = Reward { rewardGold    = Gold 0
+  mempty = Reward { rewardGold    = mempty
                   , rewardSpecial = False }
 
 {- | 'List1' is a list that contains at least one element.
@@ -153,7 +153,7 @@ data List1 a = List1 a [a]
 -- | This should be list append.
 instance Semigroup (List1 a) where
   (<>) :: List1 a -> List1 a -> List1 a
-  List1 x xs <> List1 y ys = List1 x (xs ++ [y] ++ ys) 
+  List1 x xs <> List1 y ys = List1 x (xs ++ y : ys) 
 
 
 {- | Does 'List1' have the 'Monoid' instance? If no then why?
@@ -181,9 +181,8 @@ monsters, you should get a combined treasure and not just the first
 -}
 instance (Semigroup a) => Semigroup (Treasure a) where
   (<>) :: Treasure a -> Treasure a -> Treasure a
-  (<>) NoTreasure NoTreasure             = NoTreasure
-  (<>) NoTreasure (SomeTreasure y)       = SomeTreasure y
-  (<>) (SomeTreasure x) NoTreasure       = SomeTreasure x
+  (<>) NoTreasure y                      = y
+  (<>) x NoTreasure                      = x
   (<>) (SomeTreasure x) (SomeTreasure y) = SomeTreasure (x <> y)
 
 instance (Semigroup a) => Monoid (Treasure a) where
@@ -248,11 +247,11 @@ types that can have such an instance.
 instance Foldable List1 where
   foldr :: (a -> b -> b) -> b -> List1 a -> b
   foldr reducer acc (List1 x [])     = reducer x acc
-  foldr reducer acc (List1 x (y:ys)) = reducer x (foldr reducer acc (List1 y ys))
+  foldr reducer acc (List1 x xs) = reducer x (foldr reducer acc xs)
 
   foldMap :: Monoid m => (a -> m) -> List1 a -> m
   foldMap fn (List1 x [])     = fn x
-  foldMap fn (List1 x (y:ys)) = fn x <> foldMap fn (List1 y ys)
+  foldMap fn (List1 x xs) = fn x <> foldMap fn xs
 
 instance Foldable Treasure where
   foldr :: (a -> b -> b) -> b -> Treasure a -> b
@@ -279,7 +278,6 @@ types that can have such an instance.
 
 instance Functor List1 where
   fmap :: (a -> b) -> List1 a -> List1 b
-  fmap fn (List1 x []) = List1 (fn x) []
   fmap fn (List1 x xs) = List1 (fn x) (map fn xs)
 
 instance Functor Treasure where
