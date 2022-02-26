@@ -134,8 +134,36 @@ errors. We will simply return an optional result here.
 🕯 HINT: Use the 'readMaybe' function from the 'Text.Read' module.
 -}
 
+split :: Char -> String -> [String]
+split symb = go (== symb)
+  where go :: (Char -> Bool) -> String -> [String]
+        go isSymb str = case dropWhile isSymb str of
+                          "" -> []
+                          subStr -> term : go isSymb rest
+                                      where (term, rest) = break isSymb subStr
+
+validateRow :: [String] -> Maybe (String, String, Int)
+validateRow [name, tradeType, cost] = if isNameValid name && isTradeTypeValid tradeType && isCostValid cost
+                                        then Just (name, tradeType, read cost :: Int)
+                                        else Nothing
+  where isNameValid :: String -> Bool
+        isNameValid = (/= "")
+
+        isTradeTypeValid :: String -> Bool
+        isTradeTypeValid trType = trType == show Sell || trType == show Buy
+
+        isCostValid :: String -> Bool
+        isCostValid cst = maybe False (>= 0) (readMaybe cst :: Maybe Int)
+validateRow _                       = Nothing
+
+toRow :: (String, String, Int) -> Row
+toRow (name, tradeType, cost) = Row { rowProduct = name
+                                    , rowTradeType = if tradeType == show Sell then Sell else Buy
+                                    , rowCost = cost }
+
 parseRow :: String -> Maybe Row
-parseRow = error "TODO"
+parseRow row = fmap toRow rawVals
+  where rawVals = readMaybe row >>= (validateRow . split ',')
 
 {-
 We have almost all we need to calculate final stats in a simple and
