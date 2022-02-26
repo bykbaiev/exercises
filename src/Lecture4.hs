@@ -216,6 +216,16 @@ instance for the 'Stats' type itself.
 -}
 
 instance Semigroup Stats where
+  (<>) :: Stats -> Stats -> Stats
+  (<>) x y = Stats { statsTotalPositions = statsTotalPositions x <> statsTotalPositions y
+                   , statsTotalSum       = statsTotalSum x       <> statsTotalSum y
+                   , statsAbsoluteMax    = statsAbsoluteMax x    <> statsAbsoluteMax y
+                   , statsAbsoluteMin    = statsAbsoluteMin x    <> statsAbsoluteMin y
+                   , statsSellMax        = statsSellMax x        <> statsSellMax y
+                   , statsSellMin        = statsSellMin x        <> statsSellMin y
+                   , statsBuyMax         = statsBuyMax x         <> statsBuyMax y
+                   , statsBuyMin         = statsBuyMin x         <> statsBuyMin y
+                   , statsLongest        = statsLongest x        <> statsLongest y }
 
 
 {-
