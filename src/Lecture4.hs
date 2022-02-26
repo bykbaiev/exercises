@@ -92,6 +92,8 @@ module Lecture4
     , Stats (..)
 
       -- * Internal functions
+    , split
+    , validateRow
     , parseRow
     , rowToStats
     , combineRows
@@ -103,6 +105,8 @@ module Lecture4
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
 import Text.Read (readMaybe)
+
+import Lecture2 (dropSpaces)
 
 {- In this exercise, instead of writing the entire program from
 scratch, you're offered to complete the missing parts.
@@ -143,10 +147,18 @@ split symb = go (== symb)
                                       where (term, rest) = break isSymb subStr
 
 validateRow :: [String] -> Maybe (String, String, Int)
-validateRow [name, tradeType, cost] = if isNameValid name && isTradeTypeValid tradeType && isCostValid cost
-                                        then Just (name, tradeType, read cost :: Int)
+validateRow [name, tradeType, cost] = if isNameValid name
+                                         && isTradeTypeValid parsedTradeType
+                                         && isCostValid parsedCost
+                                        then Just (name, parsedTradeType, read parsedCost :: Int)
                                         else Nothing
-  where isNameValid :: String -> Bool
+  where parsedTradeType :: String
+        parsedTradeType = dropSpaces tradeType
+
+        parsedCost :: String
+        parsedCost = dropSpaces cost
+    
+        isNameValid :: String -> Bool
         isNameValid = (/= "")
 
         isTradeTypeValid :: String -> Bool
@@ -157,13 +169,12 @@ validateRow [name, tradeType, cost] = if isNameValid name && isTradeTypeValid tr
 validateRow _                       = Nothing
 
 toRow :: (String, String, Int) -> Row
-toRow (name, tradeType, cost) = Row { rowProduct = name
+toRow (name, tradeType, cost) = Row { rowProduct   = name
                                     , rowTradeType = if tradeType == show Sell then Sell else Buy
-                                    , rowCost = cost }
+                                    , rowCost      = cost }
 
 parseRow :: String -> Maybe Row
-parseRow row = fmap toRow rawVals
-  where rawVals = readMaybe row >>= (validateRow . split ',')
+parseRow = fmap toRow . validateRow . split ','
 
 {-
 We have almost all we need to calculate final stats in a simple and
