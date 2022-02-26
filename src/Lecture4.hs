@@ -242,7 +242,17 @@ row in the file.
 -}
 
 rowToStats :: Row -> Stats
-rowToStats = error "TODO"
+rowToStats row = Stats { statsTotalPositions = Sum 1
+                       , statsTotalSum       = Sum (rowCost row) * (if isSell then 1 else -1)
+                       , statsAbsoluteMax    = Max $ rowCost row
+                       , statsAbsoluteMin    = Min $ rowCost row
+                       , statsSellMax        = if isSell then Just $ Max $ rowCost row else Nothing
+                       , statsSellMin        = if isSell then Just $ Min $ rowCost row else Nothing
+                       , statsBuyMax         = if isSell then Nothing else Just $ Max $ rowCost row
+                       , statsBuyMin         = if isSell then Nothing else Just $ Min $ rowCost row
+                       , statsLongest        = MaxLen $ rowProduct row }
+  where isSell :: Bool
+        isSell = rowTradeType row == Sell
 
 {-
 Now, after we learned to convert a single row, we can convert a list of rows!
