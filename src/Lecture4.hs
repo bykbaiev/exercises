@@ -185,6 +185,10 @@ string.
 If both strings have the same length, return the first one.
 -}
 instance Semigroup MaxLen where
+  (<>) :: MaxLen -> MaxLen -> MaxLen
+  (<>) x y
+    | length (unMaxLen y) > length (unMaxLen x) = y
+    | otherwise                                 = x
 
 
 {-
