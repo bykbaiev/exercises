@@ -102,6 +102,7 @@ module Lecture4
     , printProductStats
     ) where
 
+import Data.Maybe (mapMaybe)
 import Data.List.NonEmpty (NonEmpty (..), map)
 import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
 import Text.Read (readMaybe)
@@ -328,8 +329,16 @@ the file doesn't have any products.
 🕯 HINT: Have a look at 'mapMaybe' function from 'Data.Maybe' (you may need to import it).
 -}
 
+rowsToNonEmptyList :: [Row] -> Maybe (NonEmpty Row)
+rowsToNonEmptyList []     = Nothing
+rowsToNonEmptyList (x:xs) = Just (x :| xs)
+
+mapRows :: [String] -> Maybe (NonEmpty Row)
+mapRows = rowsToNonEmptyList . mapMaybe parseRow
+
 calculateStats :: String -> String
-calculateStats = error "TODO"
+calculateStats content = maybe "The file doesn't have any products" (displayStats . combineRows) (mapRows (split '\n' content))
+
 
 {- The only thing left is to write a function with side-effects that
 takes a path to a file, reads its content, calculates stats and prints
