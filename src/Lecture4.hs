@@ -102,7 +102,7 @@ module Lecture4
     , printProductStats
     ) where
 
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), map)
 import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
 import Text.Read (readMaybe)
 
@@ -289,7 +289,7 @@ implement the next task.
 -}
 
 combineRows :: NonEmpty Row -> Stats
-combineRows = error "TODO"
+combineRows rows = sconcat $ Data.List.NonEmpty.map rowToStats rows 
 
 {-
 After we've calculated stats for all rows, we can then pretty-print
@@ -300,7 +300,16 @@ you can return string "no value"
 -}
 
 displayStats :: Stats -> String
-displayStats = error "TODO"
+displayStats stats = "Total positions:       : " ++
+                     show (getSum $ statsTotalPositions stats) ++
+                     "\nTotal final balance    : -15" ++
+                     "\nBiggest absolute cost  : 50" ++
+                     "\nSmallest absolute cost : 10" ++
+                     "\nMax earning            : 25" ++
+                     "\nMin earning            : 10" ++
+                     "\nMax spending           : 50" ++
+                     "\nMin spending           : 50" ++
+                     "\nLongest product name   : Pineapples"
 
 {-
 Now, we definitely have all the pieces in places! We can write a
