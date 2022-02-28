@@ -108,7 +108,7 @@ module Lecture4
 import Data.Maybe (mapMaybe)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
+import Data.Semigroup (Max (..), Min (..), Sum (..))
 
 import Text.Read (readMaybe)
 
@@ -236,17 +236,22 @@ The 'Stats' data type has multiple fields. All these fields have
 instance for the 'Stats' type itself.
 -}
 
+strictMaybeAppend :: Semigroup a => Maybe a -> Maybe a -> Maybe a
+strictMaybeAppend x y = case x <> y of
+                          Nothing   -> Nothing
+                          Just !val -> Just val
+
 instance Semigroup Stats where
   (<>) :: Stats -> Stats -> Stats
-  (<>) x y = Stats { statsTotalPositions = statsTotalPositions x <> statsTotalPositions y
-                   , statsTotalSum       = statsTotalSum x       <> statsTotalSum y
-                   , statsAbsoluteMax    = statsAbsoluteMax x    <> statsAbsoluteMax y
-                   , statsAbsoluteMin    = statsAbsoluteMin x    <> statsAbsoluteMin y
-                   , statsSellMax        = statsSellMax x        <> statsSellMax y
-                   , statsSellMin        = statsSellMin x        <> statsSellMin y
-                   , statsBuyMax         = statsBuyMax x         <> statsBuyMax y
-                   , statsBuyMin         = statsBuyMin x         <> statsBuyMin y
-                   , statsLongest        = statsLongest x        <> statsLongest y }
+  (<>) x y = Stats { statsTotalPositions = statsTotalPositions x <>                  statsTotalPositions y
+                   , statsTotalSum       = statsTotalSum x       <>                  statsTotalSum y
+                   , statsAbsoluteMax    = statsAbsoluteMax x    <>                  statsAbsoluteMax y
+                   , statsAbsoluteMin    = statsAbsoluteMin x    <>                  statsAbsoluteMin y
+                   , statsSellMax        = statsSellMax x        `strictMaybeAppend` statsSellMax y
+                   , statsSellMin        = statsSellMin x        `strictMaybeAppend` statsSellMin y
+                   , statsBuyMax         = statsBuyMax x         `strictMaybeAppend` statsBuyMax y
+                   , statsBuyMin         = statsBuyMin x         `strictMaybeAppend` statsBuyMin y
+                   , statsLongest        = statsLongest x        <>                  statsLongest y }
 
 
 {-
