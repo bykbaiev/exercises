@@ -345,7 +345,7 @@ mapRows :: [String] -> Maybe (NonEmpty Row)
 mapRows = rowsToNonEmptyList . mapMaybe parseRow
 
 calculateStats :: String -> String
-calculateStats content = maybe "The file doesn't have any products" (displayStats . combineRows) (mapRows (split '\n' content))
+calculateStats = maybe "The file doesn't have any products" (displayStats . combineRows) . mapRows . split '\n'
 
 
 {- The only thing left is to write a function with side-effects that
