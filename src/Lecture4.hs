@@ -303,14 +303,22 @@ you can return string "no value"
 displayStats :: Stats -> String
 displayStats stats = "Total positions:       : " ++
                      show (getSum $ statsTotalPositions stats) ++
-                     "\nTotal final balance    : -15" ++
-                     "\nBiggest absolute cost  : 50" ++
-                     "\nSmallest absolute cost : 10" ++
-                     "\nMax earning            : 25" ++
-                     "\nMin earning            : 10" ++
-                     "\nMax spending           : 50" ++
-                     "\nMin spending           : 50" ++
-                     "\nLongest product name   : Pineapples"
+                     "\nTotal final balance    : " ++
+                     show (getSum $ statsTotalSum stats) ++
+                     "\nBiggest absolute cost  : " ++
+                     show (getMax $ statsAbsoluteMax stats) ++
+                     "\nSmallest absolute cost : " ++
+                     show (getMin $ statsAbsoluteMin stats) ++
+                     "\nMax earning            : " ++
+                     maybe "no value" (show . getMax) (statsSellMax stats) ++
+                     "\nMin earning            : " ++
+                     maybe "no value" (show . getMin) (statsSellMin stats) ++
+                     "\nMax spending           : " ++
+                     maybe "no value" (show . getMax) (statsBuyMax stats) ++
+                     "\nMin spending           : " ++
+                     maybe "no value" (show . getMin) (statsBuyMin stats) ++
+                     "\nLongest product name   : " ++
+                     unMaxLen (statsLongest stats)
 
 {-
 Now, we definitely have all the pieces in places! We can write a
