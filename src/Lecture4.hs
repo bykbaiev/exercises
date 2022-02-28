@@ -1,3 +1,6 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE BangPatterns #-}
+
 {- |
 Module                  : Lecture4
 Copyright               : (c) 2021-2022 Haskell Beginners 2022 Course
@@ -103,7 +106,8 @@ module Lecture4
     ) where
 
 import Data.Maybe (mapMaybe)
-import Data.List.NonEmpty (NonEmpty (..), map)
+import Data.List (foldl')
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
 
 import Text.Read (readMaybe)
@@ -295,7 +299,7 @@ implement the next task.
 -}
 
 combineRows :: NonEmpty Row -> Stats
-combineRows rows = sconcat $ Data.List.NonEmpty.map rowToStats rows 
+combineRows (first :| rest) = Data.List.foldl' (\a x -> a <> rowToStats x) (rowToStats first) rest
 
 {-
 After we've calculated stats for all rows, we can then pretty-print
