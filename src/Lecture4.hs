@@ -105,7 +105,12 @@ module Lecture4
 import Data.Maybe (mapMaybe)
 import Data.List.NonEmpty (NonEmpty (..), map)
 import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
+
 import Text.Read (readMaybe)
+
+import System.Environment (getArgs)
+import System.IO (stderr, hPutStrLn)
+import System.Directory (doesFileExist)
 
 import Lecture2 (dropSpaces)
 
@@ -371,8 +376,17 @@ CLI args:
 https://hackage.haskell.org/package/base-4.16.0.0/docs/System-Environment.html#v:getArgs
 -}
 
+handleMaybeMissingFile :: String -> Bool -> IO ()
+handleMaybeMissingFile path exists = if exists
+                                     then printProductStats path
+                                     else hPutStrLn stderr $ "Error: file " ++ path ++ " does not exist"
+
+handleArgs :: [String] -> IO ()
+handleArgs [path] = doesFileExist path >>= handleMaybeMissingFile path 
+handleArgs _ = hPutStrLn stderr "Error: wrong arguments - there should be a path to a file"
+
 main :: IO ()
-main = error "TODO"
+main = getArgs >>= handleArgs
 
 
 {-
