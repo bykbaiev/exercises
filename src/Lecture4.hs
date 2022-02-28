@@ -348,7 +348,7 @@ Use functions 'readFile' and 'putStrLn' here.
 -}
 
 printProductStats :: FilePath -> IO ()
-printProductStats = error "TODO"
+printProductStats path = readFile path >>= (putStrLn . calculateStats)
 
 {-
 Okay, I lied. This is not the last thing. Now, we need to wrap
