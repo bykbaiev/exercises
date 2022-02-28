@@ -69,6 +69,7 @@ library
                        Lecture2
                        Lecture3
                        Lecture4
+  build-depends:       directory ^>= 1.3
 
 executable lecture4
   import:              common-options, common-exe
