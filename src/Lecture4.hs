@@ -1,3 +1,6 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE BangPatterns #-}
+
 {- |
 Module                  : Lecture4
 Copyright               : (c) 2021-2022 Haskell Beginners 2022 Course
@@ -92,6 +95,8 @@ module Lecture4
     , Stats (..)
 
       -- * Internal functions
+    , split
+    , validateRow
     , parseRow
     , rowToStats
     , combineRows
@@ -100,9 +105,18 @@ module Lecture4
     , printProductStats
     ) where
 
+import Data.Maybe (mapMaybe)
+import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Semigroup (Max (..), Min (..), Semigroup (..), Sum (..))
+import Data.Semigroup (Max (..), Min (..), Sum (..))
+
 import Text.Read (readMaybe)
+
+import System.Environment (getArgs)
+import System.IO (stderr, hPutStrLn)
+import System.Directory (doesFileExist)
+
+import Lecture2 (dropSpaces)
 
 {- In this exercise, instead of writing the entire program from
 scratch, you're offered to complete the missing parts.
@@ -134,8 +148,43 @@ errors. We will simply return an optional result here.
 🕯 HINT: Use the 'readMaybe' function from the 'Text.Read' module.
 -}
 
+split :: Char -> String -> [String]
+split symb = go (== symb)
+  where go :: (Char -> Bool) -> String -> [String]
+        go isSymb str = case dropWhile isSymb str of
+                          "" -> []
+                          subStr -> term : go isSymb rest
+                                      where (term, rest) = break isSymb subStr
+
+validateRow :: [String] -> Maybe (String, String, Int)
+validateRow [name, tradeType, cost] = if isNameValid name
+                                         && isTradeTypeValid parsedTradeType
+                                         && isCostValid parsedCost
+                                        then Just (name, parsedTradeType, read parsedCost :: Int)
+                                        else Nothing
+  where parsedTradeType :: String
+        parsedTradeType = dropSpaces tradeType
+
+        parsedCost :: String
+        parsedCost = dropSpaces cost
+    
+        isNameValid :: String -> Bool
+        isNameValid = (/= "")
+
+        isTradeTypeValid :: String -> Bool
+        isTradeTypeValid trType = trType == show Sell || trType == show Buy
+
+        isCostValid :: String -> Bool
+        isCostValid cst = maybe False (>= 0) (readMaybe cst :: Maybe Int)
+validateRow _                       = Nothing
+
+toRow :: (String, String, Int) -> Row
+toRow (name, tradeType, cost) = Row { rowProduct   = name
+                                    , rowTradeType = if tradeType == show Sell then Sell else Buy
+                                    , rowCost      = cost }
+
 parseRow :: String -> Maybe Row
-parseRow = error "TODO"
+parseRow = fmap toRow . validateRow . split ','
 
 {-
 We have almost all we need to calculate final stats in a simple and
@@ -157,6 +206,10 @@ string.
 If both strings have the same length, return the first one.
 -}
 instance Semigroup MaxLen where
+  (<>) :: MaxLen -> MaxLen -> MaxLen
+  (<>) x y
+    | length (unMaxLen y) > length (unMaxLen x) = y
+    | otherwise                                 = x
 
 
 {-
@@ -183,7 +236,22 @@ The 'Stats' data type has multiple fields. All these fields have
 instance for the 'Stats' type itself.
 -}
 
+strictMaybeAppend :: Semigroup a => Maybe a -> Maybe a -> Maybe a
+strictMaybeAppend x y = case x <> y of
+                          Nothing   -> Nothing
+                          Just !val -> Just val
+
 instance Semigroup Stats where
+  (<>) :: Stats -> Stats -> Stats
+  (<>) x y = Stats { statsTotalPositions = statsTotalPositions x <>                  statsTotalPositions y
+                   , statsTotalSum       = statsTotalSum x       <>                  statsTotalSum y
+                   , statsAbsoluteMax    = statsAbsoluteMax x    <>                  statsAbsoluteMax y
+                   , statsAbsoluteMin    = statsAbsoluteMin x    <>                  statsAbsoluteMin y
+                   , statsSellMax        = statsSellMax x        `strictMaybeAppend` statsSellMax y
+                   , statsSellMin        = statsSellMin x        `strictMaybeAppend` statsSellMin y
+                   , statsBuyMax         = statsBuyMax x         `strictMaybeAppend` statsBuyMax y
+                   , statsBuyMin         = statsBuyMin x         `strictMaybeAppend` statsBuyMin y
+                   , statsLongest        = statsLongest x        <>                  statsLongest y }
 
 
 {-
@@ -200,7 +268,17 @@ row in the file.
 -}
 
 rowToStats :: Row -> Stats
-rowToStats = error "TODO"
+rowToStats row = Stats { statsTotalPositions = Sum 1
+                       , statsTotalSum       = Sum (rowCost row) * (if isSell then 1 else -1)
+                       , statsAbsoluteMax    = Max $ rowCost row
+                       , statsAbsoluteMin    = Min $ rowCost row
+                       , statsSellMax        = if isSell then Just $ Max $ rowCost row else Nothing
+                       , statsSellMin        = if isSell then Just $ Min $ rowCost row else Nothing
+                       , statsBuyMax         = if isSell then Nothing else Just $ Max $ rowCost row
+                       , statsBuyMin         = if isSell then Nothing else Just $ Min $ rowCost row
+                       , statsLongest        = MaxLen $ rowProduct row }
+  where isSell :: Bool
+        isSell = rowTradeType row == Sell
 
 {-
 Now, after we learned to convert a single row, we can convert a list of rows!
@@ -226,7 +304,7 @@ implement the next task.
 -}
 
 combineRows :: NonEmpty Row -> Stats
-combineRows = error "TODO"
+combineRows (first :| rest) = Data.List.foldl' (\a x -> a <> rowToStats x) (rowToStats first) rest
 
 {-
 After we've calculated stats for all rows, we can then pretty-print
@@ -237,7 +315,24 @@ you can return string "no value"
 -}
 
 displayStats :: Stats -> String
-displayStats = error "TODO"
+displayStats stats = "Total positions:       : " ++
+                     show (getSum $ statsTotalPositions stats) ++
+                     "\nTotal final balance    : " ++
+                     show (getSum $ statsTotalSum stats) ++
+                     "\nBiggest absolute cost  : " ++
+                     show (getMax $ statsAbsoluteMax stats) ++
+                     "\nSmallest absolute cost : " ++
+                     show (getMin $ statsAbsoluteMin stats) ++
+                     "\nMax earning            : " ++
+                     maybe "no value" (show . getMax) (statsSellMax stats) ++
+                     "\nMin earning            : " ++
+                     maybe "no value" (show . getMin) (statsSellMin stats) ++
+                     "\nMax spending           : " ++
+                     maybe "no value" (show . getMax) (statsBuyMax stats) ++
+                     "\nMin spending           : " ++
+                     maybe "no value" (show . getMin) (statsBuyMin stats) ++
+                     "\nLongest product name   : " ++
+                     unMaxLen (statsLongest stats)
 
 {-
 Now, we definitely have all the pieces in places! We can write a
@@ -256,8 +351,16 @@ the file doesn't have any products.
 🕯 HINT: Have a look at 'mapMaybe' function from 'Data.Maybe' (you may need to import it).
 -}
 
+rowsToNonEmptyList :: [Row] -> Maybe (NonEmpty Row)
+rowsToNonEmptyList []     = Nothing
+rowsToNonEmptyList (x:xs) = Just (x :| xs)
+
+mapRows :: [String] -> Maybe (NonEmpty Row)
+mapRows = rowsToNonEmptyList . mapMaybe parseRow
+
 calculateStats :: String -> String
-calculateStats = error "TODO"
+calculateStats = maybe "The file doesn't have any products" (displayStats . combineRows) . mapRows . split '\n'
+
 
 {- The only thing left is to write a function with side-effects that
 takes a path to a file, reads its content, calculates stats and prints
@@ -267,7 +370,7 @@ Use functions 'readFile' and 'putStrLn' here.
 -}
 
 printProductStats :: FilePath -> IO ()
-printProductStats = error "TODO"
+printProductStats path = readFile path >>= (putStrLn . calculateStats)
 
 {-
 Okay, I lied. This is not the last thing. Now, we need to wrap
@@ -282,8 +385,17 @@ CLI args:
 https://hackage.haskell.org/package/base-4.16.0.0/docs/System-Environment.html#v:getArgs
 -}
 
+handleMaybeMissingFile :: String -> Bool -> IO ()
+handleMaybeMissingFile path exists = if exists
+                                     then printProductStats path
+                                     else hPutStrLn stderr $ "Error: file " ++ path ++ " does not exist"
+
+handleArgs :: [String] -> IO ()
+handleArgs [path] = doesFileExist path >>= handleMaybeMissingFile path 
+handleArgs _ = hPutStrLn stderr "Error: wrong arguments - there should be a path to a file"
+
 main :: IO ()
-main = error "TODO"
+main = getArgs >>= handleArgs
 
 
 {-

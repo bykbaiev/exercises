@@ -9,7 +9,7 @@ import System.IO.Silently (silence)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 
 import Lecture4 (MaxLen (..), Row (..), Stats (..), TradeType (..), calculateStats, displayStats,
-                 parseRow, printProductStats, rowToStats)
+                 parseRow, printProductStats, rowToStats, split, validateRow)
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -17,6 +17,18 @@ import qualified Hedgehog.Range as Range
 
 lecture4Spec :: Spec
 lecture4Spec = describe "Lecture 4" $ do
+    describe "split" $ do
+      it "Valid Buy" $ split ',' "Oranges,Buy,10" `shouldBe` ["Oranges", "Buy", "10"]
+
+      it "Valid Sell" $ split ',' "Apples,Sell,0" `shouldBe` ["Apples", "Sell", "0"]
+
+    describe "validateRow" $ do
+      it "Valid Buy" $ validateRow ["Oranges", "Buy", "10"] `shouldBe` Just ("Oranges", "Buy", 10)
+
+      it "Valid Sell" $ validateRow ["Apples", "Sell", "0"] `shouldBe` Just ("Apples", "Sell", 0)
+
+      it "Ignores spaces in line" $ validateRow ["  Apples  ", "  Sell  ", " 7 "] `shouldBe` Just ("  Apples  ", "Sell", 7)
+
     describe "parseRow" $ do
         it "Valid Buy" $ parseRow "Oranges,Buy,10" `shouldBe` Just Row
             { rowProduct   = "Oranges"
